@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-rubik: 'Rubik', sans-serif;
+  --color-navy-900: #0a0a0a;
+  --color-navy-800: #111111;
+  --color-navy-700: #1a1a1a;
+  --color-accent: #3b82f6;
+  --color-accent-glow: rgba(59, 130, 246, 0.5);
+  --shadow-glow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 40px rgba(59, 130, 246, 0.15);
+  --radius-jumbo: 40px;
+}
+
+@layer base {
+  :root {
+    --color-bg: #0a0a0a;
+    --color-card: rgba(255, 255, 255, 0.05);
+    --color-accent: #3b82f6;
+    --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.5);
+    --radius-jumbo: 48px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--color-bg);
+  }
+
+  body {
+    font-family: 'Rubik', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Optimized Aurora Animation using GPU transform only */
+@keyframes aurora-float {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.3;
+  }
+
+  50% {
+    transform: translate3d(20px, -20px, 0) scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+.animate-aurora {
+  animation: aurora-float 15s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Base Styles */
+h1,
+h2,
+h3,
+h4,
+button {
+  letter-spacing: -0.02em;
+}
+
+/* Original :root and body styles are now handled by @layer base */
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.card-glow {
+  background: var(--color-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-glow);
+  border-radius: var(--radius-jumbo);
+}

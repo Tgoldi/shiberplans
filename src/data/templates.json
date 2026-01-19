@@ -1,0 +1,157 @@
+{
+    "templates": [
+        {
+            "id": "default-2026",
+            "name": "מחירון רגיל 2026",
+            "content": {
+                "hero": {
+                    "title": "שירותי הפקה 2026",
+                    "subtitle": "Amit Shiber - Video Production & Creative"
+                },
+                "plans": [
+                    {
+                        "id": "level1",
+                        "name": "LEVEL 1",
+                        "price": "₪175",
+                        "description": "עריכה בסיסית ומהירה",
+                        "popular": false,
+                        "features": [
+                            "טקסט ברור וקריא",
+                            "שילוב B-rolls",
+                            "מוזיקת רקע מותאמת",
+                            "תיקוני צבע בסיסיים"
+                        ],
+                        "packages": [
+                            "חבילת 10 סרטונים ב-₪1,500"
+                        ],
+                        "videos": [
+                            {
+                                "title": "דוגמה 1",
+                                "color": "bg-red-400"
+                            },
+                            {
+                                "title": "דוגמה 2",
+                                "color": "bg-red-300"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "level2",
+                        "name": "LEVEL 2",
+                        "price": "₪375",
+                        "description": "עריכה מקצועית מלאה",
+                        "popular": true,
+                        "features": [
+                            "עיצוב טקסט קאסטום",
+                            "תזמון מוזיקה מדויק (On beat)",
+                            "ויזואל AI ו-B-rolls מתקדמים",
+                            "סאונד אפקטס (SFX)"
+                        ],
+                        "packages": [
+                            "חבילת 10 סרטונים ב-₪3,500"
+                        ],
+                        "videos": [
+                            {
+                                "title": "דוגמה 1",
+                                "color": "bg-blue-400"
+                            },
+                            {
+                                "title": "דוגמה 2",
+                                "color": "bg-blue-300"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "level3",
+                        "name": "LEVEL 3",
+                        "price": "₪3,000",
+                        "description": "עריכת אנימציה מלאה (After Effects)",
+                        "popular": false,
+                        "features": [
+                            "מושן גרפיקס ברמה גבוהה",
+                            "עיצוב סאונד מלא",
+                            "אופטימיזציה לשימור צפייה (Retention)",
+                            "סטוריטלינג ויזואלי מתקדם"
+                        ],
+                        "packages": [
+                            "חבילת 4 סרטונים ב-₪11,000"
+                        ],
+                        "videos": [
+                            {
+                                "title": "דוגמה 1",
+                                "color": "bg-purple-400"
+                            },
+                            {
+                                "title": "דוגמה 2",
+                                "color": "bg-purple-300"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "sale-2026",
+            "name": "מבצע השקה (הנחה)",
+            "content": {
+                "hero": {
+                    "title": "מבצע השקה 2026",
+                    "subtitle": "מחירי היכרות לזמן מוגבל"
+                },
+                "plans": [
+                    {
+                        "id": "level1",
+                        "name": "BASIC",
+                        "price": "₪150",
+                        "description": "התחלה קלה ומהירה",
+                        "popular": false,
+                        "features": [
+                            "כתוביות בסיסיות",
+                            "מוזיקה מהמאגר",
+                            "עד 30 שניות",
+                            "התאמה לטיקטוק/רילס"
+                        ],
+                        "packages": [
+                            "חבילת 10 סרטונים ב-₪1,200"
+                        ],
+                        "videos": []
+                    },
+                    {
+                        "id": "level2",
+                        "name": "PRO",
+                        "price": "₪300",
+                        "description": "הבחירה המקצועית",
+                        "popular": true,
+                        "features": [
+                            "עריכה דינאמית",
+                            "אפקטים ו-Transitions",
+                            "סאונד ומקצבים",
+                            "תיקוני צבע מתקדמים"
+                        ],
+                        "packages": [
+                            "חבילת 10 סרטונים ב-₪2,800"
+                        ],
+                        "videos": []
+                    },
+                    {
+                        "id": "level3",
+                        "name": "AGENCY",
+                        "price": "₪2,500",
+                        "description": "הפקה ברמת פרסומת",
+                        "popular": false,
+                        "features": [
+                            "אפטר אפקטס מלא",
+                            "תסריט ובימוי",
+                            "עיצוב סאונד קולנועי",
+                            "ליווי קריאייטיב צמוד"
+                        ],
+                        "packages": [
+                            "חבילת 3 סרטונים ב-₪7,000"
+                        ],
+                        "videos": []
+                    }
+                ]
+            }
+        }
+    ]
+}
