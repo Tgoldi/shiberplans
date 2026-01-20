@@ -15,9 +15,9 @@ export function PricingSection() {
     const addons = content.plans.filter(p => p.isAddon);
 
     return (
-        <div className="w-full px-4 md:px-8 z-10 perspective-1000 pb-20">
+        <div className="w-full px-4 md:px-8 z-10 perspective-1000 pb-40">
             {/* Main Plans Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24 max-w-[1600px] mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-24 md:gap-6 mb-24 max-w-[1600px] mx-auto">
                 {mainPlans.map((plan, index) => (
                     <motion.div
                         key={plan.id}
@@ -194,7 +194,7 @@ export function PricingSection() {
                         className="w-full px-4 mb-8"
                     >
                         <div className={`
-                          relative p-8 md:p-10 flex flex-col gap-8
+                          relative p-6 md:p-10 flex flex-col gap-8
                           bg-gradient-to-r from-palette-card to-palette-main backdrop-blur-xl 
                           border border-palette-primary/30
                           rounded-[40px] shadow-[0_0_50px_rgba(5,131,242,0.15)]
@@ -204,9 +204,9 @@ export function PricingSection() {
                             <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-palette-primary/20 via-transparent to-transparent pointer-events-none" />
 
                             {/* Top Section: Info & Price */}
-                            <div className="flex flex-col md:flex-row gap-10 items-start w-full relative z-10">
+                            <div className="flex flex-col-reverse md:flex-row gap-8 md:gap-10 items-start w-full relative z-10">
                                 <div className="flex-1 text-right w-full">
-                                    <h3 className="text-3xl font-black mb-4 text-white drop-shadow-xl flex items-center justify-end gap-3">
+                                    <h3 className="text-2xl md:text-3xl font-black mb-4 text-white drop-shadow-xl flex items-center justify-end gap-3">
                                         <span className="px-3 py-1 bg-palette-primary/20 text-palette-accent text-xs rounded-full border border-palette-primary/30">תוספת</span>
                                         <EditableText value={plan.name} path={`plans[${realIndex}].name`} />
                                     </h3>
@@ -257,7 +257,7 @@ export function PricingSection() {
                                                 {/* Text Overlay for Gallery */}
                                                 {plan.galleryIds && (
                                                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10 text-white p-4">
-                                                        <div className="bg-white/20 p-3 rounded-full backdrop-blur-md border border-white/10 shadow-lg group-hover:scale-110 transition-transform">
+                                                        <div className="bg-accent p-3 rounded-full backdrop-blur-md border border-white/10 shadow-lg group-hover:scale-110 transition-transform">
                                                             <Film size={24} className="text-white drop-shadow-md" />
                                                         </div>
                                                         <div className="text-center">

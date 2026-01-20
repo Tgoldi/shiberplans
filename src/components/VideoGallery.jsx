@@ -105,9 +105,9 @@ export function VideoGallery({ isOpen, onClose, videos }) {
                                                     <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-10">
                                                         <motion.div
                                                             whileHover={{ scale: 1.1 }}
-                                                            className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center mb-4 border border-white/20 shadow-[0_0_20px_rgba(0,0,0,0.5)] group-hover:bg-palette-accent group-hover:text-white transition-colors duration-300"
+                                                            className="flex items-center justify-center mb-4 text-white group-hover:text-palette-accent transition-colors duration-300"
                                                         >
-                                                            <Play size={36} className="ml-1 fill-current" />
+                                                            <Play size={48} className="ml-1 fill-transparent stroke-[1.5] drop-shadow-lg" />
                                                         </motion.div>
                                                         <h3 className="font-bold text-xl drop-shadow-lg translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 px-6 text-center">{video.title}</h3>
                                                     </div>
