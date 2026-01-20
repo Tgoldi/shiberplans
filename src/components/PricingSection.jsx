@@ -337,8 +337,8 @@ export function PricingSection() {
                                             <ComparisonSlider
                                                 beforeImage={`/color-grade/rec709/${id}.png`}
                                                 afterImage={`/color-grade/final/${id}.png`}
-                                                beforeLabel="עריכה בסיסית"
-                                                afterLabel="עריכה מקצועית"
+                                                beforeLabel="תיקון צבעים בסיס"
+                                                afterLabel=" תיקון צבעים מתקדם"
                                             />
                                         </div>
                                     ))}
