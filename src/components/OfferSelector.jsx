@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronRight, X, Package, RefreshCw, Loader2 } from 'lucide-react';
+import { Check, ChevronRight, X, Package, RefreshCw, Loader2, Plus } from 'lucide-react';
 import { useEdit } from '../context/EditContext';
 import emailjs from '@emailjs/browser';
 import { generateInvoiceHTML } from '../utils/generateInvoice';
+import { EditableText } from './EditableText';
 
 // EmailJS Configuration
-// These should be configured in your .env file and Vercel Project Settings
 const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
@@ -14,11 +14,18 @@ const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 export function OfferSelector() {
     const { content } = useEdit();
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedOffer, setSelectedOffer] = useState(null);
+
+    // Selection State
+    const [selectedMainPlan, setSelectedMainPlan] = useState(null); // { planIndex, packageIndex }
+    const [selectedAddons, setSelectedAddons] = useState([]); // Array of planIndices
+
     const [step, setStep] = useState('select'); // 'select' | 'sign' | 'success'
 
     // User Details
     const [clientName, setClientName] = useState('');
+    const [contactName, setContactName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Signature Canvas Refs
@@ -31,15 +38,19 @@ export function OfferSelector() {
         if (!isOpen) {
             setTimeout(() => {
                 setStep('select');
-                setSelectedOffer(null);
+                setSelectedMainPlan(null);
+                setSelectedAddons([]);
                 setHasSignature(false);
                 setClientName('');
+                setContactName('');
+                setPhone('');
+                setEmail('');
                 setIsSubmitting(false);
             }, 300);
         }
     }, [isOpen]);
 
-    // Canvas Logic (Keep existing implementation...)
+    // Canvas Logic
     const startDrawing = (e) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -93,90 +104,138 @@ export function OfferSelector() {
     };
 
     const handleSelect = (planIndex, packageIndex = null) => {
-        setSelectedOffer({
-            planIndex,
-            packageIndex,
-            type: packageIndex !== null ? 'package' : 'plan'
+        const plan = content.plans[planIndex];
+
+        if (plan.isAddon) {
+            // Toggle Add-on
+            setSelectedAddons(prev => {
+                if (prev.includes(planIndex)) {
+                    return prev.filter(i => i !== planIndex);
+                } else {
+                    return [...prev, planIndex];
+                }
+            });
+        } else {
+            // Select Main Plan (Mutually Exclusive)
+            if (selectedMainPlan?.planIndex === planIndex && selectedMainPlan?.packageIndex === packageIndex) {
+                // Deselect if clicking same
+                setSelectedMainPlan(null);
+            } else {
+                setSelectedMainPlan({ planIndex, packageIndex });
+            }
+        }
+    };
+
+    const getOfferSummary = () => {
+        const lines = [];
+
+        // Main Plan
+        if (selectedMainPlan) {
+            const plan = content.plans[selectedMainPlan.planIndex];
+            let name = plan.name;
+            if (selectedMainPlan.packageIndex !== null) {
+                name += ` - ${plan.packages[selectedMainPlan.packageIndex]}`;
+            }
+            lines.push(name);
+        }
+
+        // Add-ons
+        selectedAddons.forEach(idx => {
+            const addon = content.plans[idx];
+            lines.push(`+ ${addon.name}`);
         });
+
+        return lines;
     };
 
-    const getOfferName = () => {
-        if (!selectedOffer) return '';
-        const plan = content.plans[selectedOffer.planIndex];
-        if (selectedOffer.type === 'package') {
-            return `${plan.name} - ${plan.packages[selectedOffer.packageIndex]}`;
-        }
-        return plan.name;
+    const getOfferNameString = () => {
+        return getOfferSummary().join('\n');
     };
 
-    const getPrice = () => {
-        if (!selectedOffer) return '';
-        const plan = content.plans[selectedOffer.planIndex];
-        // Logic to parse price if needed, for now just returning plan price
-        // Note: If packages have specific prices parsed from string, we might need regex.
-        // Assuming package string is like "10 videos for 3500"
-        if (selectedOffer.type === 'package') {
-            return plan.packages[selectedOffer.packageIndex];
+    const getTotalPriceString = () => {
+        const prices = [];
+
+        if (selectedMainPlan) {
+            const plan = content.plans[selectedMainPlan.planIndex];
+            if (selectedMainPlan.packageIndex !== null) {
+                // Try to extract price from package string if necessary, currently just using string
+                // Assuming package string contains the price
+                prices.push(plan.packages[selectedMainPlan.packageIndex]);
+            } else {
+                prices.push(plan.price);
+            }
         }
-        return plan.price;
+
+        selectedAddons.forEach(idx => {
+            const addon = content.plans[idx];
+            prices.push(addon.price);
+        });
+
+        return prices.join(' + ');
     };
 
     const handleSubmit = async () => {
         setIsSubmitting(true);
         try {
             const canvas = canvasRef.current;
-            // Optimize signature size: using JPEG with 0.5 quality reduces size significantly vs PNG
             const signatureImage = canvas.toDataURL('image/jpeg', 0.5);
 
             const dateStr = new Date().toLocaleString('he-IL');
-            const offerName = getOfferName();
-            const priceVal = getPrice();
+            const offerName = getOfferNameString(); // Multiline string
+            const priceVal = getTotalPriceString();
 
-            // Generate professional HTML invoice
             const invoiceHtml = generateInvoiceHTML({
                 clientName,
+                contactName,
+                phone,
+                email,
                 offerName,
                 price: priceVal,
-                signature: signatureImage, // Pass full base64 to generator
+                signature: signatureImage,
                 date: dateStr
             });
 
             const templateParams = {
                 client_name: clientName,
+                contact_name: contactName,
+                phone_number: phone,
+                email: email,
                 offer_name: offerName,
                 price: priceVal,
                 signature: signatureImage,
                 date: dateStr,
-                invoice_html: invoiceHtml // The new rich HTML field
+                invoice_html: invoiceHtml
             };
 
             await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
             setStep('success');
         } catch (error) {
             console.error('EmailJS Error:', error);
-            if (error && error.text) console.error('Error Text:', error.text);
             alert(`אירעה שגיאה בשליחת הטופס: ${error.text || 'שגיאה לא ידועה'}`);
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    // Separate plans
+    const mainPlans = content.plans.map((p, i) => ({ ...p, originalIndex: i })).filter(p => !p.isAddon);
+    const addons = content.plans.map((p, i) => ({ ...p, originalIndex: i })).filter(p => p.isAddon);
+
+    const hasSelection = selectedMainPlan !== null || selectedAddons.length > 0;
+    const isFormValid = hasSignature &&
+        clientName.trim().length > 0 &&
+        contactName.trim().length > 0 &&
+        phone.trim().length > 0 &&
+        email.trim().length > 0;
+
     return (
         <>
-            {/* Floating Button - Optimized with pure Framer Motion */}
+            {/* Floating Button */}
             <motion.button
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{
-                    type: "spring",
-                    stiffness: 260,
-                    damping: 20,
-                    delay: 0.5
-                }}
-                whileHover={{
-                    scale: 1.05,
-                    boxShadow: "0px 0px 50px rgba(59,130,246,0.6)"
-                }}
+                transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.5 }}
+                whileHover={{ scale: 1.05, boxShadow: "0px 0px 50px rgba(59,130,246,0.6)" }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(true)}
                 className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 bg-accent text-white px-8 py-4 rounded-full font-bold text-lg shadow-[0_0_30px_rgba(59,130,246,0.4)] flex items-center gap-3 border border-white/20 will-change-transform"
@@ -194,35 +253,28 @@ export function OfferSelector() {
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8"
                     >
-                        <div
-                            className="absolute inset-0 bg-black/60 backdrop-blur-md"
-                            onClick={() => setIsOpen(false)}
-                        />
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setIsOpen(false)} />
 
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 20 }}
                             transition={{ type: "spring", bounce: 0.3, duration: 0.6 }}
-                            className="relative w-[95%] sm:w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-[32px] sm:rounded-[40px] shadow-[0_0_80px_rgba(59,130,246,0.2)] flex flex-col max-h-[90vh] overflow-hidden"
+                            className="relative w-[95%] sm:w-full max-w-2xl bg-[#011526] border border-white/10 rounded-[32px] sm:rounded-[40px] shadow-[0_0_80px_rgba(5,131,242,0.2)] flex flex-col max-h-[90vh] overflow-hidden"
                         >
-                            {/* Animated Background Inside Modal - OPTIMIZED */}
                             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-blue-600/10 blur-[80px] rounded-full animate-aurora mix-blend-screen" style={{ animationDelay: '-2s' }} />
-                                <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-indigo-600/10 blur-[80px] rounded-full animate-aurora mix-blend-screen" style={{ animationDelay: '-7s' }} />
+                                <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-palette-card/10 blur-[80px] rounded-full animate-aurora mix-blend-screen" style={{ animationDelay: '-2s' }} />
+                                <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-palette-primary/10 blur-[80px] rounded-full animate-aurora mix-blend-screen" style={{ animationDelay: '-7s' }} />
                             </div>
 
                             {/* Header */}
                             <div className="relative z-10 flex items-center justify-between p-6 border-b border-white/5 bg-white/5 backdrop-blur-sm">
                                 <h2 className="text-2xl font-black text-white">
-                                    {step === 'select' && 'בחר את המסלול שלך'}
-                                    {step === 'sign' && 'חתימה דיגיטלית'}
+                                    {step === 'select' && 'הרכב את החבילה שלך'}
+                                    {step === 'sign' && 'פרטים וחתימה'}
                                     {step === 'success' && 'ההצעה אושרה!'}
                                 </h2>
-                                <button
-                                    onClick={() => setIsOpen(false)}
-                                    className="p-2 rounded-full bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                                >
+                                <button onClick={() => setIsOpen(false)} className="p-2 rounded-full bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
                                     <X size={24} />
                                 </button>
                             </div>
@@ -238,65 +290,100 @@ export function OfferSelector() {
                                             initial={{ opacity: 0, x: 20 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -20 }}
-                                            className="p-6 space-y-6"
+                                            className="p-6 space-y-8"
                                         >
-                                            {content.plans.map((plan, pIndex) => (
-                                                <div key={pIndex} className="space-y-3">
-                                                    <div
-                                                        onClick={() => handleSelect(pIndex)}
-                                                        className={`
-                                                            relative p-4 rounded-2xl border transition-colors cursor-pointer flex items-center gap-4 group
-                                                            ${selectedOffer?.type === 'plan' && selectedOffer?.planIndex === pIndex
-                                                                ? 'bg-accent/20 border-accent shadow-[0_0_20px_rgba(59,130,246,0.2)]'
-                                                                : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}
-                                                        `}
-                                                    >
-                                                        <div className={`
-                                                            w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
-                                                            ${selectedOffer?.type === 'plan' && selectedOffer?.planIndex === pIndex
-                                                                ? 'border-accent bg-accent text-white'
-                                                                : 'border-gray-500 group-hover:border-gray-300'}
-                                                        `}>
-                                                            {selectedOffer?.type === 'plan' && selectedOffer?.planIndex === pIndex && <Check size={14} />}
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <h3 className="font-bold text-lg text-white">{plan.name}</h3>
-                                                            <p className="text-sm text-gray-400">{plan.price} / סרטון</p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Packages */}
-                                                    {plan.packages && plan.packages.length > 0 && (
-                                                        <div className="mr-8 space-y-2 border-r-2 border-white/5 pr-4">
-                                                            <div className="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-2">
-                                                                <Package size={12} /> חבילות מוזלות
+                                            {/* Main Plans */}
+                                            <div className="space-y-4">
+                                                <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-4">בחר חבילת בסיס (חובה)</h3>
+                                                {mainPlans.map((plan) => (
+                                                    <div key={plan.originalIndex} className="space-y-3">
+                                                        <div
+                                                            onClick={() => handleSelect(plan.originalIndex)}
+                                                            className={`
+                                                                relative p-4 rounded-2xl border transition-colors cursor-pointer flex items-center gap-4 group
+                                                                ${selectedMainPlan?.planIndex === plan.originalIndex && selectedMainPlan.packageIndex === null
+                                                                    ? 'bg-accent/20 border-accent shadow-[0_0_20px_rgba(59,130,246,0.2)]'
+                                                                    : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}
+                                                            `}
+                                                        >
+                                                            <div className={`
+                                                                w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
+                                                                ${selectedMainPlan?.planIndex === plan.originalIndex && selectedMainPlan.packageIndex === null
+                                                                    ? 'border-accent bg-accent text-white'
+                                                                    : 'border-gray-500 group-hover:border-gray-300'}
+                                                            `}>
+                                                                {selectedMainPlan?.planIndex === plan.originalIndex && selectedMainPlan.packageIndex === null && <Check size={14} />}
                                                             </div>
-                                                            {plan.packages.map((pkg, pkgIndex) => (
-                                                                <div
-                                                                    key={pkgIndex}
-                                                                    onClick={() => handleSelect(pIndex, pkgIndex)}
-                                                                    className={`
-                                                                        p-3 rounded-xl border transition-colors cursor-pointer flex items-center gap-3 group text-sm
-                                                                        ${selectedOffer?.type === 'package' && selectedOffer?.planIndex === pIndex && selectedOffer?.packageIndex === pkgIndex
-                                                                            ? 'bg-accent/10 border-accent/50'
-                                                                            : 'bg-transparent border-transparent hover:bg-white/5'}
-                                                                    `}
-                                                                >
-                                                                    <div className={`
-                                                                        w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
-                                                                        ${selectedOffer?.type === 'package' && selectedOffer?.planIndex === pIndex && selectedOffer?.packageIndex === pkgIndex
-                                                                            ? 'border-accent bg-accent text-white'
-                                                                            : 'border-gray-600 group-hover:border-gray-400'}
-                                                                    `}>
-                                                                        {selectedOffer?.type === 'package' && selectedOffer?.planIndex === pIndex && selectedOffer?.packageIndex === pkgIndex && <Check size={12} />}
-                                                                    </div>
-                                                                    <span className="text-gray-300 group-hover:text-white transition-colors">{pkg}</span>
-                                                                </div>
-                                                            ))}
+                                                            <div className="flex-1">
+                                                                <h3 className="font-bold text-lg text-white">{plan.name}</h3>
+                                                                <p className="text-sm text-gray-400">{plan.price} / יחידה</p>
+                                                            </div>
                                                         </div>
-                                                    )}
+
+                                                        {/* Packages */}
+                                                        {plan.packages && plan.packages.length > 0 && (
+                                                            <div className="mr-8 space-y-2 border-r-2 border-white/5 pr-4">
+                                                                {plan.packages.map((pkg, pkgIndex) => (
+                                                                    <div
+                                                                        key={pkgIndex}
+                                                                        onClick={() => handleSelect(plan.originalIndex, pkgIndex)}
+                                                                        className={`
+                                                                            p-3 rounded-xl border transition-colors cursor-pointer flex items-center gap-3 group text-sm
+                                                                            ${selectedMainPlan?.planIndex === plan.originalIndex && selectedMainPlan.packageIndex === pkgIndex
+                                                                                ? 'bg-accent/10 border-accent/50'
+                                                                                : 'bg-transparent border-transparent hover:bg-white/5'}
+                                                                        `}
+                                                                    >
+                                                                        <div className={`
+                                                                            w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
+                                                                            ${selectedMainPlan?.planIndex === plan.originalIndex && selectedMainPlan.packageIndex === pkgIndex
+                                                                                ? 'border-accent bg-accent text-white'
+                                                                                : 'border-gray-600 group-hover:border-gray-400'}
+                                                                        `}>
+                                                                            {selectedMainPlan?.planIndex === plan.originalIndex && selectedMainPlan.packageIndex === pkgIndex && <Check size={12} />}
+                                                                        </div>
+                                                                        <span className="text-gray-300 group-hover:text-white transition-colors">{pkg}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Add-ons */}
+                                            {addons.length > 0 && (
+                                                <div className="space-y-4 pt-6 border-t border-white/10">
+                                                    <h3 className="text-blue-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+                                                        <Plus size={16} /> תוספות ושדרוגים
+                                                    </h3>
+                                                    {addons.map((addon) => (
+                                                        <div
+                                                            key={addon.originalIndex}
+                                                            onClick={() => handleSelect(addon.originalIndex)}
+                                                            className={`
+                                                                relative p-4 rounded-2xl border transition-colors cursor-pointer flex items-center gap-4 group
+                                                                ${selectedAddons.includes(addon.originalIndex)
+                                                                    ? 'bg-palette-primary/20 border-palette-primary shadow-[0_0_20px_rgba(33,66,166,0.2)]'
+                                                                    : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}
+                                                            `}
+                                                        >
+                                                            <div className={`
+                                                                w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors
+                                                                ${selectedAddons.includes(addon.originalIndex)
+                                                                    ? 'border-palette-primary bg-palette-primary text-white'
+                                                                    : 'border-gray-500 group-hover:border-gray-300'}
+                                                            `}>
+                                                                {selectedAddons.includes(addon.originalIndex) && <Check size={14} />}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <h3 className="font-bold text-lg text-white">{addon.name}</h3>
+                                                                <p className="text-sm text-gray-400">{addon.price}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
+                                            )}
                                         </motion.div>
                                     )}
 
@@ -310,44 +397,97 @@ export function OfferSelector() {
                                             className="p-8 flex flex-col items-center text-center space-y-6"
                                         >
                                             <div className="text-gray-300 w-full text-right space-y-4 bg-white/5 p-6 rounded-2xl border border-white/5">
-                                                <h4 className="text-lg font-bold text-white border-b border-white/10 pb-2">תנאים ומידע חשוב</h4>
+                                                <h4 className="text-lg font-bold text-white border-b border-white/10 pb-2">סיכום ההזמנה</h4>
 
-                                                <div className="space-y-2 text-sm leading-relaxed text-gray-400">
-                                                    <p>
-                                                        <strong className="text-white">סבבי תיקונים:</strong> כל הצעה כוללת סבב תיקונים אחד ללא עלות נוספת.
-                                                        כל סבב תיקון נוסף מעבר לכך יחויב ב-25% ממחיר הסרטון.
-                                                    </p>
+                                                <ul className="space-y-2 mb-4">
+                                                    {getOfferSummary().map((line, i) => (
+                                                        <li key={i} className="text-white font-medium flex items-start gap-2">
+                                                            <Check size={16} className="text-accent mt-1 shrink-0" />
+                                                            <span>{line}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
 
-                                                    <p>
-                                                        <strong className="text-white">הגדרת סבב תיקונים:</strong> סבב תיקונים נחשב רק לאחר שנשלחה גרסה ראשונית של הסרטון עם קאטים נקיים וטקסט ללא עריכה מתקדמת.
-                                                        הלקוח בוחר באמצעות מערכת <span className="text-accent">Timeliner.io</span> אילו קטעים להסיר או לשמר, ולאחר מכן מחכה לקבלת הגרסה המלאה.
-                                                        רק אז ניתן לרשום תיקונים מסודרים במערכת ולשלוח לעריכה סופית. כל מעבר נוסף מעבר לכך נחשב כסבב תיקון נוסף.
-                                                    </p>
-
-                                                    <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg mt-2">
-                                                        <strong className="text-red-400 block mb-1">חשוב לדעת:</strong>
-                                                        יש לרשום את כל התיקונים באמצעות מערכת Timeliner.io בלבד - לא בוואטסאפ.
-                                                    </div>
-                                                </div>
-
-                                                <div className="border-t border-white/10 pt-4 mt-4">
-                                                    <p className="mb-2 text-center text-gray-300">מאשר את קבלת ההצעה:</p>
-                                                    <p className="text-xl font-bold text-white text-center bg-black/20 py-2 px-4 rounded-lg block w-fit mx-auto">{getOfferName()}</p>
+                                                <div className="text-sm text-gray-400 pt-4 border-t border-white/10">
+                                                    מחיר משוער: <span className="text-white font-bold">{getTotalPriceString()}</span>
                                                 </div>
                                             </div>
 
-                                            {/* Client Name Input */}
-                                            <div className="w-full text-right">
-                                                <label className="block text-sm font-bold text-gray-400 mb-2 mr-1">
-                                                    שם מלא / שם חברה:
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={clientName}
-                                                    onChange={(e) => setClientName(e.target.value)}
-                                                    placeholder="הכנס שם מלא או שם חברה..."
-                                                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-all"
-                                                />
+                                            {/* Terms Section */}
+                                            {content.terms && (
+                                                <div className="text-right space-y-3 w-full bg-white/5 p-6 rounded-2xl border border-white/5">
+                                                    <h4 className="text-lg font-bold text-white border-b border-white/10 pb-2">תנאי השירות</h4>
+                                                    <div className="space-y-3 text-sm text-gray-400 leading-relaxed">
+                                                        {content.terms.map((term, i) => (
+                                                            <p key={i}>
+                                                                <EditableText value={term} path={`terms[${i}]`} multiline />
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Contact Details Inputs */}
+                                            <div className="w-full space-y-4 text-right">
+                                                {/* Client Name */}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-400 mb-2 mr-1">
+                                                        שם מלא / שם חברה:
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={clientName}
+                                                        onChange={(e) => setClientName(e.target.value)}
+                                                        placeholder="הכנס שם מלא או שם חברה..."
+                                                        className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-all"
+                                                    />
+                                                </div>
+
+                                                {/* Contact Person */}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-400 mb-2 mr-1">
+                                                        שם איש קשר:
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={contactName}
+                                                        onChange={(e) => setContactName(e.target.value)}
+                                                        placeholder="שם של איש הקשר..."
+                                                        className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-all"
+                                                    />
+                                                </div>
+
+                                                {/* Phone */}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-400 mb-2 mr-1">
+                                                        טלפון:
+                                                    </label>
+                                                    <input
+                                                        type="tel"
+                                                        value={phone}
+                                                        onChange={(e) => setPhone(e.target.value)}
+                                                        placeholder="מספר טלפון לתיאום..."
+                                                        className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-all"
+                                                        dir="ltr"
+                                                        style={{ textAlign: 'right' }}
+                                                    />
+                                                </div>
+
+                                                {/* Email */}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-400 mb-2 mr-1">
+                                                        אימייל:
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        placeholder="כתובת אימייל לקבלת ההצעה..."
+                                                        className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-all"
+                                                        dir="ltr"
+                                                        style={{ textAlign: 'right' }}
+                                                    />
+                                                </div>
                                             </div>
 
                                             <p className="text-sm opacity-60">בחתימתי אני מאשר את תנאי ההתקשרות והמחירים המפורטים בהצעה זו.</p>
@@ -398,7 +538,7 @@ export function OfferSelector() {
                                             </div>
                                             <h3 className="text-3xl font-black text-white">תודה רבה!</h3>
                                             <p className="text-gray-400 text-lg">
-                                                ההצעה נחתמה בהצלחה ונשלחה במייל.<br />
+                                                ההצעה נחתמה בהצלחה ונשלחה במייל לכתובת {email}.<br />
                                                 נצור איתך קשר בהקדם לתחילת עבודה.
                                             </p>
                                         </motion.div>
@@ -425,13 +565,13 @@ export function OfferSelector() {
                                     <motion.button
                                         className={`
                                             px-8 py-3 rounded-full font-bold shadow-lg flex-1 mr-4
-                                            ${selectedOffer
+                                            ${hasSelection
                                                 ? 'bg-accent text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]'
                                                 : 'bg-gray-800 text-gray-600 cursor-not-allowed'}
                                         `}
-                                        whileHover={selectedOffer ? { scale: 1.05 } : {}}
-                                        whileTap={selectedOffer ? { scale: 0.95 } : {}}
-                                        disabled={!selectedOffer}
+                                        whileHover={hasSelection ? { scale: 1.05 } : {}}
+                                        whileTap={hasSelection ? { scale: 0.95 } : {}}
+                                        disabled={!hasSelection}
                                         onClick={() => setStep('sign')}
                                     >
                                         המשך לחתימה
@@ -442,13 +582,13 @@ export function OfferSelector() {
                                     <motion.button
                                         className={`
                                             px-8 py-3 rounded-full font-bold shadow-lg flex-1 mr-4 flex items-center justify-center gap-2
-                                            ${hasSignature && clientName.trim().length > 0 && !isSubmitting
+                                            ${isFormValid && !isSubmitting
                                                 ? 'bg-green-500 text-white shadow-[0_0_30px_rgba(34,197,94,0.4)]'
                                                 : 'bg-gray-800 text-gray-600 cursor-not-allowed'}
                                         `}
-                                        whileHover={hasSignature && clientName.trim().length > 0 && !isSubmitting ? { scale: 1.05 } : {}}
-                                        whileTap={hasSignature && clientName.trim().length > 0 && !isSubmitting ? { scale: 0.95 } : {}}
-                                        disabled={!hasSignature || clientName.trim().length === 0 || isSubmitting}
+                                        whileHover={isFormValid && !isSubmitting ? { scale: 1.05 } : {}}
+                                        whileTap={isFormValid && !isSubmitting ? { scale: 0.95 } : {}}
+                                        disabled={!isFormValid || isSubmitting}
                                         onClick={handleSubmit}
                                     >
                                         {isSubmitting ? (

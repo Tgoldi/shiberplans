@@ -1,4 +1,4 @@
-export const generateInvoiceHTML = ({ clientName, offerName, price, signature, date }) => {
+export const generateInvoiceHTML = ({ clientName, contactName, phone, email, offerName, price, signature, date }) => {
     return `
     <div dir="rtl" style="font-family: 'Heebo', sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; color: #333333; padding: 40px; border: 1px solid #eeeeee; border-radius: 8px;">
         <!-- Header -->
@@ -11,8 +11,20 @@ export const generateInvoiceHTML = ({ clientName, offerName, price, signature, d
         <div style="margin-bottom: 30px;">
             <table style="width: 100%; border-collapse: collapse;">
                 <tr>
-                    <td style="padding: 10px 0; font-weight: bold; width: 100px;">לכבוד:</td>
+                    <td style="padding: 10px 0; font-weight: bold; width: 120px;">שם לקוח/חברה:</td>
                     <td style="padding: 10px 0;">${clientName}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0; font-weight: bold;">איש קשר:</td>
+                    <td style="padding: 10px 0;">${contactName}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0; font-weight: bold;">טלפון:</td>
+                    <td style="padding: 10px 0;">${phone}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0; font-weight: bold;">אימייל:</td>
+                    <td style="padding: 10px 0;">${email}</td>
                 </tr>
                 <tr>
                     <td style="padding: 10px 0; font-weight: bold;">תאריך:</td>

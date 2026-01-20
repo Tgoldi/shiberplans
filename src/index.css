@@ -3,21 +3,21 @@
 
 @theme {
   --font-rubik: 'Rubik', sans-serif;
-  --color-navy-900: #0a0a0a;
-  --color-navy-800: #111111;
-  --color-navy-700: #1a1a1a;
-  --color-accent: #3b82f6;
-  --color-accent-glow: rgba(59, 130, 246, 0.5);
-  --shadow-glow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 40px rgba(59, 130, 246, 0.15);
+  --color-navy-900: #011526;
+  --color-navy-800: #0C2059;
+  --color-navy-700: #2142A6;
+  --color-accent: #0583F2;
+  --color-accent-glow: rgba(5, 131, 242, 0.5);
+  --shadow-glow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 40px rgba(5, 131, 242, 0.15);
   --radius-jumbo: 40px;
 }
 
 @layer base {
   :root {
-    --color-bg: #0a0a0a;
-    --color-card: rgba(255, 255, 255, 0.05);
-    --color-accent: #3b82f6;
-    --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.5);
+    --color-bg: #011526;
+    --color-card: rgba(12, 32, 89, 0.3);
+    --color-accent: #0583F2;
+    --shadow-glow: 0 0 20px rgba(5, 131, 242, 0.5);
     --radius-jumbo: 48px;
   }
 

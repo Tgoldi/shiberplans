@@ -7,12 +7,19 @@ export default {
     theme: {
         extend: {
             colors: {
-                primary: '#0a192f', // Navy Blue
+                primary: '#011526', // Deepest Navy
                 secondary: '#ffffff', // White
-                accent: '#64ffda', // Optional accent to pop if needed, or stick to white/navy
+                accent: '#0583F2', // Bright Blue
+                palette: {
+                    main: '#011526',    // Deepest Navy/Black
+                    card: '#0C2059',    // Deep Blue
+                    primary: '#2142A6', // Royal Blue
+                    accent: '#0583F2',  // Bright Blue
+                    dark: '#0D0D0D',    // Titanium Black
+                },
                 navy: {
-                    900: '#0a192f',
-                    800: '#112240',
+                    900: '#011526',
+                    800: '#0C2059',
                 }
             },
             fontFamily: {
