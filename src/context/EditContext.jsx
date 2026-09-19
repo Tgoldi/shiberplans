@@ -155,44 +155,14 @@ export function EditProvider({ children }) {
         });
     };
 
-    // Load state from URL if present
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const encodedData = params.get('data');
-        if (encodedData) {
-            try {
-                const decompressed = LZString.decompressFromEncodedURIComponent(encodedData);
-                if (decompressed) {
-                    const parsedContent = JSON.parse(decompressed);
-                    setContent(parsedContent);
-                }
-            } catch (error) {
-                console.error("Failed to parse content from URL:", error);
-            }
-        }
-    }, []);
-
+    // NOTE: Loading arbitrary business content (prices, terms, contact info) from the
+    // URL is unsafe because it allows anyone to fabricate/alter documents by crafting
+    // a URL (invoice fraud). Content must instead be sourced from the backend/local
+    // templates only, keyed by a safe identifier (e.g. template name/id), never from
+    // raw JSON embedded in the URL. Therefore URL-based content loading/sharing has
+    // been disabled here.
     const saveContent = () => {
-        try {
-            // Encode content to URL
-            const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(content));
-            const newUrl = `${window.location.pathname}?data=${compressed}`;
-
-            // Update URL without reload
-            window.history.pushState({ path: newUrl }, '', newUrl);
-
-            // Copy to clipboard
-            navigator.clipboard.writeText(window.location.href).then(() => {
-                alert("הקישור נשמר והועתק ללוח! שלח אותו כדי לשתף את העריכות.");
-            }).catch(err => {
-                console.error("Failed to copy URL:", err);
-                alert("הקישור נוצר בשורת הכתובת. העתק אותו כדי לשתף.");
-            });
-
-        } catch (error) {
-            console.error("Failed to save content:", error);
-            alert("שגיאה בשמירת התוכן.");
-        }
+        alert("שיתוף תוכן מלא דרך קישור אינו נתמך מטעמי אבטחה. השתמש בשמירת תבנית.");
     };
 
     return (
