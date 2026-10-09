@@ -1,4 +1,20 @@
+const escapeHtml = (value) =>
+    String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
 export const generateInvoiceHTML = ({ clientName, contactName, phone, email, offerName, price, signature, date }) => {
+    clientName = escapeHtml(clientName);
+    contactName = escapeHtml(contactName);
+    phone = escapeHtml(phone);
+    email = escapeHtml(email);
+    offerName = escapeHtml(offerName);
+    price = escapeHtml(price);
+    signature = escapeHtml(signature);
+    date = escapeHtml(date);
     return `
     <div dir="rtl" style="font-family: 'Heebo', sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; color: #333333; padding: 40px; border: 1px solid #eeeeee; border-radius: 8px;">
         <!-- Header -->
