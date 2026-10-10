@@ -1,4 +1,27 @@
-export const generateInvoiceHTML = ({ clientName, contactName, phone, email, offerName, price, signature, date }) => {
+const escapeHtml = (value) =>
+    String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+const SAFE_IMAGE_DATA_URL = /^data:image\/(?:jpeg|jpg|png|gif|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
+const sanitizeSignature = (value) => {
+    const str = String(value ?? '').trim();
+    return SAFE_IMAGE_DATA_URL.test(str) ? str : '';
+};
+
+export const generateInvoiceHTML = (data) => {
+    const clientName = escapeHtml(data.clientName);
+    const contactName = escapeHtml(data.contactName);
+    const phone = escapeHtml(data.phone);
+    const email = escapeHtml(data.email);
+    const offerName = escapeHtml(data.offerName);
+    const price = escapeHtml(data.price);
+    const date = escapeHtml(data.date);
+    const signature = sanitizeSignature(data.signature);
     return `
     <div dir="rtl" style="font-family: 'Heebo', sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; color: #333333; padding: 40px; border: 1px solid #eeeeee; border-radius: 8px;">
         <!-- Header -->
